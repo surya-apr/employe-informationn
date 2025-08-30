@@ -128,7 +128,8 @@ output application/json
         </error-handler>
     </flow>
     <flow name="get:\getEmployee:employe-information-config">
-        <snowflake:select doc:name="Select" doc:id="5cbc0ee0-3062-4538-b43a-46a03470e073" config-ref="Snowflake_Config">
+        <logger level="INFO" doc:name="Logger" doc:id="2176c918-f8f2-4be2-a8d0-dd8cfac1eb7c" message="------------get the emp logger is started--------------------"/>
+		<snowflake:select doc:name="Select" doc:id="5cbc0ee0-3062-4538-b43a-46a03470e073" config-ref="Snowflake_Config">
 			<snowflake:sql ><![CDATA[select * from emp where empID = :empID]]></snowflake:sql>
 			<snowflake:input-parameters ><![CDATA[#[{
 	"empID": attributes.queryParams.empID
@@ -139,12 +140,19 @@ output application/json
                 <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
-payload]]></ee:set-payload>
+payload map (item) -> {
+	"empID": item.EMPID,
+	"firstName": item.FIRSTNAME,
+	"lastName": item.LASTNAME,
+	"email": item.EMAIL,
+	"skill": item.SKILL
+}]]></ee:set-payload>
             </ee:message>
         </ee:transform>
     </flow>
     <flow name="post:\createEmployee:application\json:employe-information-config">
-        <snowflake:insert doc:name="Insert" doc:id="ccd8f5bd-b55c-4da2-9437-eae9b002682e" config-ref="Snowflake_Config">
+        <logger level="INFO" doc:name="Logger" doc:id="6bb948f9-f743-4bd1-b5bf-bea07cbb3339" message="------------create the emp logger is started--------------------"/>
+		<snowflake:insert doc:name="Insert" doc:id="ccd8f5bd-b55c-4da2-9437-eae9b002682e" config-ref="Snowflake_Config">
 			<snowflake:sql ><![CDATA[insert into emp (empID,firstName,lastName,email,skill) values (:empID,:firstName,:lastName,:email,:skill)]]></snowflake:sql>
 			<snowflake:input-parameters ><![CDATA[#[{
 	"empID": payload.empID,
