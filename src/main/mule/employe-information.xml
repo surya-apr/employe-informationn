@@ -149,6 +149,7 @@ payload map (item) -> {
 }]]></ee:set-payload>
             </ee:message>
         </ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="33549943-2058-4738-8499-9e553e3c030e" message="---------get emp logger flow is ended---------------"/>
     </flow>
     <flow name="post:\createEmployee:application\json:employe-information-config">
         <logger level="INFO" doc:name="Logger" doc:id="6bb948f9-f743-4bd1-b5bf-bea07cbb3339" message="------------create the emp logger is started--------------------"/>
@@ -172,5 +173,6 @@ output application/json
 } ]]></ee:set-payload>
             </ee:message>
         </ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="4041c006-dcc9-4a71-94b1-df2479105992" message="---------create logger flow is ended---------------"/>
     </flow>
 </mule>
