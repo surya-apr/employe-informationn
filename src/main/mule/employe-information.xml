@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+<mule xmlns:snowflake="http://www.mulesoft.org/schema/mule/snowflake" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/snowflake http://www.mulesoft.org/schema/mule/snowflake/current/mule-snowflake.xsd">
     <http:listener-config name="employe-information-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8081" />
     </http:listener-config>
     <apikit:config name="employe-information-config" api="resource::48283cc3-8d24-4de0-aba4-0238abe6bf80:employe-information:1.0.1:raml:zip:employe-information.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
-    <flow name="employe-information-main">
+    <snowflake:snowflake-config name="Snowflake_Config" doc:name="Snowflake Config" doc:id="3e045ec6-3e46-413a-91a9-5623db2f9486" >
+		<snowflake:snowflake-connection accountName="YBPQYWW-FJ85177" warehouse="COMPUTE_WH" database="employe" schema="public" user="MAHESH08" password="Surya@12345678" role="ACCOUNTADMIN" />
+	</snowflake:snowflake-config>
+	<flow name="employe-information-main">
         <http:listener config-ref="employe-information-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
                 <http:headers>#[vars.outboundHeaders default {}]</http:headers>
@@ -124,30 +128,40 @@ output application/json
         </error-handler>
     </flow>
     <flow name="get:\getEmployee:employe-information-config">
-        <ee:transform doc:name="Transform Message">
+        <snowflake:select doc:name="Select" doc:id="5cbc0ee0-3062-4538-b43a-46a03470e073" config-ref="Snowflake_Config">
+			<snowflake:sql ><![CDATA[select * from emp where empID = :empID]]></snowflake:sql>
+			<snowflake:input-parameters ><![CDATA[#[{
+	"empID": attributes.queryParams.empID
+}]]]></snowflake:input-parameters>
+		</snowflake:select>
+		<ee:transform doc:name="Transform Message">
             <ee:message>
                 <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
-{
-  empID: "em01",
-  firstName: "Mahesh",
-  lastName: "V",
-  email: "mahesh@gmail.com",
-  skill: "Mulesoft"
-} as Object {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+payload]]></ee:set-payload>
             </ee:message>
         </ee:transform>
     </flow>
     <flow name="post:\createEmployee:application\json:employe-information-config">
-        <ee:transform doc:name="Transform Message">
+        <snowflake:insert doc:name="Insert" doc:id="ccd8f5bd-b55c-4da2-9437-eae9b002682e" config-ref="Snowflake_Config">
+			<snowflake:sql ><![CDATA[insert into emp (empID,firstName,lastName,email,skill) values (:empID,:firstName,:lastName,:email,:skill)]]></snowflake:sql>
+			<snowflake:input-parameters ><![CDATA[#[{
+	"empID": payload.empID,
+	"firstName": payload.firstName,
+	"lastName": payload.lastName,
+	"email": payload.email,
+	"skill": payload.skill
+}]]]></snowflake:input-parameters>
+		</snowflake:insert>
+		<ee:transform doc:name="Transform Message">
             <ee:message>
                 <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
   status: "employee details created successfully"
-} as Object {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
+} ]]></ee:set-payload>
             </ee:message>
         </ee:transform>
     </flow>
